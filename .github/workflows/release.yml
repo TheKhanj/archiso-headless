@@ -1,0 +1,38 @@
+name: Build and Release Arch ISO
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build docker builder image
+        run: ./docker/build-image.sh
+
+      - name: Build ISO
+        run: ./docker/build-iso.sh
+
+      - name: Locate ISO
+        id: iso
+        run: |
+          FILE=$(find target -type f -name "*.iso" | head -n 1)
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+          basename="${FILE##*/}"
+          echo "release_name=${basename%%.iso}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.iso.outputs.release_name }}
+          name: ${{ steps.iso.outputs.release_name }}
+          files: ${{ steps.iso.outputs.file }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

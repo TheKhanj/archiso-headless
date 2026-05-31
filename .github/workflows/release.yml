@@ -21,8 +21,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
-          curl -L -o /usr/local/bin/pup https://github.com/ericchiang/pup/releases/latest/download/pup_linux_amd64
-          chmod +x /usr/local/bin/pup
+          latest_pup="$(curl -s https://api.github.com/repos/ericchiang/pup/releases | jq '.[0].tag_name' -r)"
+          curl -L -o pup.zip \
+            "https://github.com/ericchiang/pup/releases/download/${latest_pup}/pup_${latest_pup}_linux_amd64.zip"
+          unzip pup.zip
+          mv pup /usr/local/bin
+          rm pup.zip
 
       - name: Check if release should run
         id: should_release

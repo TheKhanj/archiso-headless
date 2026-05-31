@@ -40,12 +40,15 @@ jobs:
           exit 0
 
       - name: Build docker builder image
+        if: steps.should_release.outputs.release == 'true'
         run: ./docker/build-image.sh
 
       - name: Build ISO
+        if: steps.should_release.outputs.release == 'true'
         run: ./docker/build-iso.sh
 
       - name: Locate ISO
+        if: steps.should_release.outputs.release == 'true'
         id: iso
         run: |
           FILE=$(find target -type f -name "*.iso" | head -n 1)
@@ -54,6 +57,7 @@ jobs:
           echo "release_name=${basename%%.iso}" >> $GITHUB_OUTPUT
 
       - name: Create Release
+        if: steps.should_release.outputs.release == 'true'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.iso.outputs.release_name }}

@@ -2,6 +2,8 @@ name: Build and Release Arch ISO
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
 
 permissions:
   contents: write
@@ -13,6 +15,29 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Install dependencies (jq + pup)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+          curl -L -o /usr/local/bin/pup https://github.com/ericchiang/pup/releases/latest/download/pup_linux_amd64
+          chmod +x /usr/local/bin/pup
+
+      - name: Check if release should run
+        id: should_release
+        run: |
+          if ./ops/github.sh should_release; then
+            echo "release=true" >> $GITHUB_OUTPUT
+          else
+            echo "release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Stop if no release needed
+        if: steps.should_release.outputs.release != 'true'
+        run: |
+          echo "No release needed today. Exiting."
+          exit 0
 
       - name: Build docker builder image
         run: ./docker/build-image.sh
